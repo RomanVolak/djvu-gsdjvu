@@ -21,44 +21,6 @@
 %%%% parameter. The main role of this file is to install a proper
 %%%% encoding vector for LaTeX fonts.
 
-% Check that system directory is writable
-systemdict wcheck not { 
-  (ps2utf8: must use option -dWRITESYSTEMDICT\n) print quit 
-} if
-
-systemdict begin
-
-%%% ------------------------------------------------------------------------
-%%% Make sure ExtractText works.
-
-/ExtractText true def
-currentdevice .devicename /djvusep eq {
-  << /ExtractText true >> setpagedevice
-} {
-  (ps2utf8: has been made obsolete by -dExtractText in gdevdjvu.\n) print
-  (ps2utf8: this is only a placeholder.\n) print
-  quit 
-} ifelse
-
-
-%%% ------------------------------------------------------------------------
-%%% Set global memory
-
-currentglobal /setglobal load true setglobal
-
-
-%%% ------------------------------------------------------------------------
-%%% Make sure ProvideUnicode works.
-
-/ProvideUnicode true def
-systemdict /.setupUnicodeDecoder known {
-  /Unicode /Decoding resourcestatus {
-     pop pop /Unicode /Decoding findresource
-     .setupUnicodeDecoder
-  } if
-} if
-
-
 
 %%% ------------------------------------------------------------------------
 %%% Define dictionary for ps2utf8 code
@@ -152,9 +114,9 @@ systemdict /.setupUnicodeDecoder known {
 % Define start-hook to replace df-tail and D by our versions.
 % Unfortunately, the user can redefine start-hook and thus bypass
 % these changes, but I don't see an obvious way around that.
-userdict /start-hook {
+userdict begin /start-hook {
   TeXDict begin /df-tail .ps2utf8 /df-tail get bind def end
-} put 
+} def end
 
 
 %%% ------------------------------------------------------------------------
@@ -162,25 +124,4 @@ userdict /start-hook {
 
 % Finish directories
 end % ps2utf8
-end % systemdict
-
-% Perform delayed binds
-NOBIND { 
-  systemdict begin .bindoperators end 
-}{ 
-  .bindnow 
-} ifelse
-
-% Binding is then back to normal
-systemdict begin
-      /NOBIND false def
-      /DELAYBIND false def 
-      /bind /.bind load def 
-end
-
-% Make systemdict readonly
-systemdict readonly pop
-
-% Restore allocation mode
-exec
 

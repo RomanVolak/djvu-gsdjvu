@@ -71,8 +71,7 @@ builddir=$gsfiles/BUILD
 cat <<EOF
 Please enter the path of the directory containing
 the necessary source files:
-  ghostscript-8.57.tar.bz2 (or better)
-  [recommended] ghostscript-fonts-std-8.11.tar.gz
+  ghostscript-9.18.tar.gz (or better) (or ghostpdl) (or .bz2 .xz)
   [optional] jpegsrc.v6b.tar.gz 
   [optional] libpng-1.2.6.tar.gz
   [optional] openjpeg-2.0.0.tar.gz
@@ -103,6 +102,7 @@ cd $builddir
 for n in * ; do
   case "$n" in
       ghostscript-[0-9]*.tar.*)            gs_src="$n" ;;
+      ghostpdl-[0-9]*.tar.*)               gs_src="$n" ;;
       ghostscript-fonts-std-[0-9]*.tar.*)  gs_font_src="$n" ;;
       jpegsrc.*.tar.*)                     jpeg_src="$n" ;;
       libpng-*.tar.*)                      png_src="$n" ;;
@@ -155,6 +155,9 @@ unpack() {
               ;;
           *.tar.bz2) 
               bzip2 -d -c "$1" | tar xf - 
+              ;;
+          *.tar.xz) 
+              xz -d -c "$1" | tar xf - 
               ;;
           *)  
               echo "Unknown tarball format: $1"
@@ -341,7 +344,9 @@ if [ $do_install = "yes" ] ; then
     $INSTALL -m 755 $gsfiles/gsdjvu "$DESTDIR$gsdir/"
     $INSTALL -m 755 $gsfiles/djvudigital "$DESTDIR$gsdir/"
     $INSTALL -m 755 bin/gs "$DESTDIR$gsdir/bin"
-    
+    if [ -x bin/gpcl6 ] ; then $INSTALL -m 755 bin/gpcl6 "$DESTDIR$gsdir/bin" ; fi
+    if [ -x -r bin/gxps ] ; then $INSTALL -m 755 bin/gxps "$DESTDIR$gsdir/bin" ; fi
+
     echo "  Fonts"
     for n in fonts/* ; do 
         test -r $n && $INSTALL -m 644 $n "$DESTDIR$gsdir/fonts"

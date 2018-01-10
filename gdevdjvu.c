@@ -109,6 +109,14 @@
 #ifndef GS_VERSION
 # define GS_VERSION 0
 #endif
+#if GS_VERSION >= 919
+# define gs_imager_state gs_gstate
+# define gs_state gs_gstate
+# define p_pis(pte) pte->pgs
+#else
+# define p_pis(pte) pte->pis
+#endif
+
 
 /* Debugging characters for gs option -z */
 #define DEBUG_CHAR_DLIST    0
@@ -191,22 +199,32 @@ lbassertfail(const char *file, int line)
 #define p2mem_parent_resize(data, newsize) realloc(data, newsize)
 #define p2mem_parent_free(data)            free(data)
 
+/* Internal: new names */
+#ifndef arch_log2_sizeof_ptr
+# ifdef ARCH_LOG2_SIZEOF_PTR
+#  define arch_log2_sizeof_ptr ARCH_LOG2_SIZEOF_PTR
+# endif
+#endif
+#ifndef arch_sizeof_ptr
+# ifdef ARCH_SIZEOF_PTR
+#  define arch_sizeof_ptr ARCH_SIZEOF_PTR
+# endif
+#endif
+
 /* Internal: minimal and maximal size of small objects */
 #ifndef arch_log2_sizeof_ptr
-#if arch_sizeof_ptr == 4
-#define arch_log2_sizeof_ptr 2
-#else
-#if arch_sizeof_ptr == 8
-#define arch_log2_sizeof_ptr 3
-#endif
-#endif
+# if arch_sizeof_ptr == 4
+#  define arch_log2_sizeof_ptr 2
+# elif arch_sizeof_ptr == 8
+#  define arch_log2_sizeof_ptr 3
+# endif
 #endif
 #if p2mem_log2_align > arch_log2_sizeof_ptr
-#define p2mem_log2_min    p2mem_log2_align
-#define p2mem_log2_max    (11)
+# define p2mem_log2_min    p2mem_log2_align
+# define p2mem_log2_max    (11)
 #else
-#define p2mem_log2_min    (arch_log2_sizeof_ptr+1)
-#define p2mem_log2_max    (11)
+# define p2mem_log2_min    (arch_log2_sizeof_ptr+1)
+# define p2mem_log2_max    (11)
 #endif
 #define p2mem_min         (1<<p2mem_log2_min)
 #define p2mem_max         (1<<p2mem_log2_max)
@@ -4360,7 +4378,14 @@ djvu_text_extract(gs_text_enum_t *pte)
     gs_int_point point;
     bool pointvalid = djvu_currentpoint(fat->pgs, &point);
     if (font && glyph) {
-#if GS_VERSION >= 903
+#if GS_VERSION >= 920
+        union { ushort s[2]; uchar c[4]; } b;
+        int len = font->procs.decode_glyph(font, glyph, -1, b.s, 4);
+        if (len == 2)
+            unicode = (b.c[0]<<8) + b.c[1];
+        if (len == 4 && b.c[0]>=0xd8 && b.c[0]<=0xdb && b.c[2]>=0xdc && b.c[2]<=0xdf)
+            unicode = 0x10000 + ((b.c[0]&0x3f)<<18) + (b.c[1]<<10) + ((b.c[2]&0x3f)<<8) + b.c[3];
+#elif GS_VERSION >= 903
         unicode = font->procs.decode_glyph(font, glyph, -1);
 #else
         unicode = font->procs.decode_glyph(font, glyph);
@@ -4400,8 +4425,8 @@ djvu_text_extract(gs_text_enum_t *pte)
             /* prepare new context */
             color = gx_no_color_index;
             if (  pte->pdcolor
-                  && gx_dc_writes_pure(pte->pdcolor, pte->pis->log_op)
-                  && pte->pis->alpha==gx_max_color_value )
+                  && gx_dc_writes_pure(pte->pdcolor, p_pis(pte)->log_op)
+                  && p_pis(pte)->alpha==gx_max_color_value )
                 color = gx_dc_pure_color(pte->pdcolor);
             djvu_check_current(cdev, color);
             cdev->curflags |= DLIST_TEXT | DLIST_RECURSIVE;
@@ -4509,8 +4534,8 @@ djvu_text_begin(gx_device *dev, gs_imager_state * pis,
     /* Prepare text object */
     color = gx_no_color_index;
     if (  pte->pdcolor
-          && gx_dc_writes_pure(pte->pdcolor, pte->pis->log_op)
-	  && pte->pis->alpha==gx_max_color_value )
+          && gx_dc_writes_pure(pte->pdcolor, p_pis(pte)->log_op)
+	  && p_pis(pte)->alpha==gx_max_color_value )
         /* Pure color so far */
         color = gx_dc_pure_color(pte->pdcolor);
     code = djvu_check_current(cdev, color);

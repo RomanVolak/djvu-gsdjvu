@@ -104,20 +104,18 @@ checkps2utf8()
 {
     if [ -z "$djvutext" ] 
     then
-        djvutext=no
-        if ( "$gsdjvu" 2>&1 -dNODISPLAY -c '(ps2utf8.ps) runlibfile quit' | \
+        djvutext=yes
+        if ( "$gsdjvu" 2>&1 -dNODISPLAY -f ps2utf8.ps -c quit | \
+              grep -q /undefinedfilename )
+        then
+            djvutext=no
+        elif ( "$gsdjvu" 2>&1 -dNODISPLAY -f ps2utf8.ps -c quit | \
               grep -q WRITESYSTEMDICT )
         then
-            djvutext="$tempdir/djvutext.ps"
-            cat > $djvutext <<\EOF
-(ps2utf8.ps) runlibfile currentglobal /setglobal load true setglobal 
-.ps2utf8 begin /onpage { } bind def /onfont { pop pop pop } bind def
-/onmark { pop pop pop pop currentx currenty currentpoint 
-.djvutextmark } bind def end exec
-EOF
+            djvutext=no
         fi
     fi
-    test "$djvutext" != no && test -r "$djvutext"  
+    test "$djvutext" != no
 }
 
 
@@ -276,19 +274,15 @@ do
           gsepsf="-dEPSCrop"
           ;;
       --words)
+          gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
           if checkps2utf8; then
-            gsarg0="$gsarg0 -dDELAYBIND -dWRITESYSTEMDICT"
-            gsarg1="-f $djvutext"
-          else
-            gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
+            gsarg1="-f ps2utf8.ps"
           fi
           ;;
       --lines)
-          if checkps2utf8; then 
-            gsarg0="$gsarg0 -dDELAYBIND -dWRITESYSTEMDICT"
-            gsarg1="-f $djvutext"
-          else
-            gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
+          gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
+          if checkps2utf8; then
+            gsarg1="-f ps2utf8.ps"
           fi
           csepargs="$csepargs -t"
           ;;

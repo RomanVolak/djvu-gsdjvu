@@ -56,4 +56,9 @@ fi
 # Step 2 -- execute ghostscript
 
 gsdir="$progdir"
-GS_LIB="$gsdir/lib:$gsdir/fonts:$gsdir" exec "$gsdir/bin/gs" "$@"
+case "$1" in
+    -pcl*) gs=gpcl6 ; shift ;;
+    -xps) gs=gxps ; shift ;;
+    *) gs=gs ;;
+esac
+GS_LIB="$gsdir/lib:$gsdir/fonts:$gsdir" exec "$gsdir/bin/$gs" "$@"
