@@ -71,11 +71,14 @@ builddir=$gsfiles/BUILD
 cat <<EOF
 Please enter the path of the directory containing
 the necessary source files:
-  ghostscript-9.18.tar.gz (or better) (or ghostpdl) (or .bz2 .xz)
+  ghostscript-9.18.tar.gz (or better)
+  [or] ghostpdl-9.22.tar.gz (or better)
   [optional] jpegsrc.v6b.tar.gz 
   [optional] libpng-1.2.6.tar.gz
   [optional] openjpeg-2.0.0.tar.gz
   [optional] zlib-1.2.1.tar.gz
+The script can also unpack zip archives or
+tar achives with bz2 or xz compression.
 See file README for more information. 
 Simply type <enter> to accept the default 
 directory "$builddir".
@@ -101,13 +104,12 @@ cd $builddir
 
 for n in * ; do
   case "$n" in
-      ghostscript-[0-9]*.tar.*)            gs_src="$n" ;;
-      ghostpdl-[0-9]*.tar.*)               gs_src="$n" ;;
-      ghostscript-fonts-std-[0-9]*.tar.*)  gs_font_src="$n" ;;
-      jpegsrc.*.tar.*)                     jpeg_src="$n" ;;
-      libpng-*.tar.*)                      png_src="$n" ;;
-      openjpeg-*.tar.*)                    openjpeg_src="$n" ;;
-      zlib-*.tar.*)                        zlib_src="$n" ;;
+      ghostpdl-[0-9]*.tar.* | ghostscript-[0-9]*.tar.* )    gs_src="$n" ;;
+      ghostscript-fonts-std-[0-9]*.tar.* )                  gs_font_src="$n" ;;
+      jpegsrc.*.tar.* )                                     jpeg_src="$n" ;;
+      libpng-*.tar.* )                                      png_src="$n" ;;
+      openjpeg-*.tar.* )                                    openjpeg_src="$n" ;;
+      zlib-*.tar.* )                                        zlib_src="$n" ;;
   esac
 done
 
@@ -170,6 +172,7 @@ unpack() {
 gssrcdir="$gs_src"
 gssrcdir=`basename $gssrcdir .gz`
 gssrcdir=`basename $gssrcdir .bz2`
+gssrcdir=`basename $gssrcdir .xz`
 gssrcdir=`basename $gssrcdir .zip`
 gssrcdir=`basename $gssrcdir .tar`
 
@@ -345,7 +348,7 @@ if [ $do_install = "yes" ] ; then
     $INSTALL -m 755 $gsfiles/djvudigital "$DESTDIR$gsdir/"
     $INSTALL -m 755 bin/gs "$DESTDIR$gsdir/bin"
     if [ -x bin/gpcl6 ] ; then $INSTALL -m 755 bin/gpcl6 "$DESTDIR$gsdir/bin" ; fi
-    if [ -x -r bin/gxps ] ; then $INSTALL -m 755 bin/gxps "$DESTDIR$gsdir/bin" ; fi
+    if [ -x bin/gxps ] ; then $INSTALL -m 755 bin/gxps "$DESTDIR$gsdir/bin" ; fi
 
     echo "  Fonts"
     for n in fonts/* ; do 
