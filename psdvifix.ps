@@ -1,5 +1,5 @@
 %%C- -------------------------------------------------------------------
-%%C- ps2utf8 - copyright (c) 2002-2005 Leon Bottou.
+%%C- psdvifix - copyright (c) 2002-2005 Leon Bottou.
 %%C-
 %%C- This software may be distributed under
 %%C- the terms of the GNU General Public License. The license should have
@@ -23,9 +23,9 @@
 
 
 %%% ------------------------------------------------------------------------
-%%% Define dictionary for ps2utf8 code
-/.ps2utf8 17 dict def
-.ps2utf8 begin
+%%% Define dictionary for psdvifix code
+/.psdvifix 17 dict def
+.psdvifix begin
 
 
 %%% ------------------------------------------------------------------------
@@ -99,7 +99,7 @@
     /nn 9 dict N nn begin
         %%  Choose an encoding based on the highest position occupied.
         dup 128 gt { /T1Encoding } { /OT1Encoding } ifelse 
-        .ps2utf8 exch get /Encoding X
+        .psdvifix exch get /Encoding X
         %%  Go on
         /FontType 3 N
 	/FontMatrix fntrx N
@@ -115,7 +115,7 @@
 % Unfortunately, the user can redefine start-hook and thus bypass
 % these changes, but I don't see an obvious way around that.
 userdict begin /start-hook {
-  TeXDict begin /df-tail .ps2utf8 /df-tail get bind def end
+  TeXDict begin /df-tail .psdvifix /df-tail get bind def end
 } def end
 
 
@@ -123,5 +123,5 @@ userdict begin /start-hook {
 %%% Finalization
 
 % Finish directories
-end % ps2utf8
+end % psdvifix
 

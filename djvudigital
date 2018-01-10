@@ -100,16 +100,16 @@ EOF
     done
 }
 
-checkps2utf8()
+checkpsdvifix()
 {
     if [ -z "$djvutext" ] 
     then
         djvutext=yes
-        if ( "$gsdjvu" 2>&1 -dNODISPLAY -f ps2utf8.ps -c quit | \
+        if ( "$gsdjvu" 2>&1 -dNODISPLAY -f psdvifix.ps -c quit | \
               grep -q /undefinedfilename )
         then
             djvutext=no
-        elif ( "$gsdjvu" 2>&1 -dNODISPLAY -f ps2utf8.ps -c quit | \
+        elif ( "$gsdjvu" 2>&1 -dNODISPLAY -f psdvifix.ps -c quit | \
               grep -q WRITESYSTEMDICT )
         then
             djvutext=no
@@ -275,14 +275,14 @@ do
           ;;
       --words)
           gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
-          if checkps2utf8; then
-            gsarg1="-f ps2utf8.ps"
+          if checkpsdvifix; then
+            gsarg1="-f psdvifix.ps"
           fi
           ;;
       --lines)
           gsarg0="$gsarg0 -dProvideUnicode -dExtractText"
-          if checkps2utf8; then
-            gsarg1="-f ps2utf8.ps"
+          if checkpsdvifix; then
+            gsarg1="-f psdvifix.ps"
           fi
           csepargs="$csepargs -t"
           ;;

@@ -219,8 +219,8 @@ echo "Patching Ghostscript.."
 rm -f 2>/dev/null $base/gdevdjvu.c
 cp $gsfiles/gdevdjvu.c $base/gdevdjvu.c
 
-rm -f 2>/dev/null lib/ps2utf8.ps
-cp $gsfiles/ps2utf8.ps lib/ps2utf8.ps
+rm -f 2>/dev/null lib/psdvifix.ps
+cp $gsfiles/psdvifix.ps lib/psdvifix.ps
 
 test -r $base/contrib.mak.gsdjvu && \
   mv $base/contrib.mak.gsdjvu $base/contrib.mak
