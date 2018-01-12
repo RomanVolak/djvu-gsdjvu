@@ -146,7 +146,7 @@ when using the 'djvumask' and 'djvusep' drivers.
 The following documentation is copied from the
 comments in the driver source code "gdevdjvu.c":
 
- ------------------------------------------------------------------------ 
+   ------------------------------------------------------------------------ 
 
    This driver implements two devices:
 
@@ -194,4 +194,3 @@ comments in the driver source code "gdevdjvu.c":
                               for each page.  Default is to reopen if the 
 			      filename contains a "%d" specification for 
 			      the page number.
-
