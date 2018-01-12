@@ -346,6 +346,7 @@ if [ $do_install = "yes" ] ; then
     echo "  Programs"
     $INSTALL -m 755 $gsfiles/gsdjvu "$DESTDIR$gsdir/"
     $INSTALL -m 755 $gsfiles/djvudigital "$DESTDIR$gsdir/"
+    $INSTALL -m 644 $gsfiles/djvudigital.1 "$DESTDIR$gsdir/"
     $INSTALL -m 755 bin/gs "$DESTDIR$gsdir/bin"
     if [ -x bin/gpcl6 ] ; then $INSTALL -m 755 bin/gpcl6 "$DESTDIR$gsdir/bin" ; fi
     if [ -x bin/gxps ] ; then $INSTALL -m 755 bin/gxps "$DESTDIR$gsdir/bin" ; fi
