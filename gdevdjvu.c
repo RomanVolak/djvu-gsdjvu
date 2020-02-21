@@ -116,6 +116,15 @@
 #else
 # define p_pis(pte) pte->pis
 #endif
+#if GS_VERSION >= 928
+# include "gp.h"
+#else
+# define gp_file    FILE
+# define gp_fwrite  fwrite
+# define gp_fprintf fprintf
+# define gp_ferror  ferror
+#endif
+
 
 
 /* Debugging characters for gs option -z */
@@ -155,7 +164,11 @@ typedef struct gx_device_djvu_s gx_device_djvu;
 #ifdef gs_stdout
 # define STDOUT gs_stdout
 #else
-# define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->fstdout)
+# if GS_VERSION >= 927
+#  define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->core->fstdout)
+# else
+#  define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->fstdout)
+# endif
 #endif
 
 /* Called by macro ASSERT defined in the H file */
@@ -1133,7 +1146,7 @@ runmap_info(runmap *r, int *parea, int *pperimeter)
 
 /* Save a runmap as PBM */
 private int
-runmap_save(runmap *r, FILE *f, 
+runmap_save(runmap *r, gp_file *f, 
             uint xmin, uint xmax, uint ymin, uint ymax, 
             const char *comment)
 {
@@ -1151,10 +1164,10 @@ runmap_save(runmap *r, FILE *f,
        the rows as a packed bitmap.  Each row occupies an integral
        number of byte.  The most significant bit of a byte represents
        the leftmost pixel coded by that byte. */
-    fprintf(f,"P4\n");
+    gp_fprintf(f,"P4\n");
     if (comment) 
-        fprintf(f, "# %s\n", comment);
-    fprintf(f,"%d %d\n", w, h);
+        gp_fprintf(f, "# %s\n", comment);
+    gp_fprintf(f,"%d %d\n", w, h);
     for (y=ymin; y<=ymax; y++) {
         uint x = xmin;
         uint nx = 0;
@@ -1189,7 +1202,7 @@ runmap_save(runmap *r, FILE *f,
         if (m < 0x80)
             *ptr++ = z;
         ASSERT(ptr == buf+rowsize);
-        if (fwrite(buf, 1, rowsize, f) != rowsize) {
+        if (gp_fwrite(buf, 1, rowsize, f) != rowsize) {
             p2mem_parent_free(buf);
             return_error(gs_error_ioerror);
         }
@@ -2777,7 +2790,7 @@ chrome_play_indexed(chrome_pos *cpos,
 
 /* Internal: Data structure to keep track of run output */
 typedef struct crle_output_s {
-    FILE *f;
+    gp_file *f;
     int x, y;
     int w, h;
     byte *bufpos;
@@ -2786,7 +2799,7 @@ typedef struct crle_output_s {
 
 /* Internal: Initialize crle_output data structure */
 private int
-crle_open(crle_output *crle, FILE *f, int w, int h, int ncolors, 
+crle_open(crle_output *crle, gp_file *f, int w, int h, int ncolors, 
           gx_color_index *palette, const char *comment)
 {
     int i;
@@ -2795,15 +2808,15 @@ crle_open(crle_output *crle, FILE *f, int w, int h, int ncolors,
     crle->w = w;
     crle->h = h;
     crle->bufpos = crle->buffer;
-    fprintf(f, "R6\n");
-    if (comment) fprintf(f, "# %s\n", comment);
-    fprintf(f, "%d %d\n%d\n", w, h, ncolors);
+    gp_fprintf(f, "R6\n");
+    if (comment) gp_fprintf(f, "# %s\n", comment);
+    gp_fprintf(f, "%d %d\n%d\n", w, h, ncolors);
     for(i=0; i<ncolors; i++) {
         byte rgb[3];
         rgb[0] = palette[i]>>16;
         rgb[1] = palette[i]>> 8;
         rgb[2] = palette[i];
-        if (fwrite(rgb, 1, 3, f) != 3)
+        if (gp_fwrite(rgb, 1, 3, f) != 3)
             return_error(gs_error_ioerror);            
     }
     return 0;
@@ -2815,7 +2828,7 @@ crle_flush(crle_output *crle)
 {
     int len = crle->bufpos - crle->buffer;
     if (len > 0) {
-        if (fwrite(crle->buffer, 1, len, crle->f) != len)
+        if (gp_fwrite(crle->buffer, 1, len, crle->f) != len)
             return_error(gs_error_ioerror);
         crle->bufpos = crle->buffer;
     }
@@ -2893,7 +2906,7 @@ crle_save(p2mem *mem,
           gx_color_index *palette, uint palettesize,
           int num, runmap **rmaps, gx_color_index *colors,
           const char *comment, 
-          FILE *outfile)
+          gp_file *outfile)
 {
     int i, x, y;
     int code;
@@ -3654,7 +3667,7 @@ struct gx_device_djvu_s {
     bool   quiet;
     /* Device data */
     p2mem          *pmem;          /* stable memory */
-    FILE           *outputfile;    /* output filename */
+    gp_file        *outputfile;    /* output filename */
     drawlist_head   head;          /* drawlist */
     chrome         *gchrome;       /* chrome data */
     gx_color_index *fgpalette;     /* fgcolors */
@@ -5440,7 +5453,7 @@ save_foreground(gx_device_djvu *cdev, const char *comment)
 private int
 save_background_no_subsampling(gx_device_djvu *cdev)
 {
-    FILE *f = cdev->outputfile;
+    gp_file *f = cdev->outputfile;
     int sraster = cdev->width * 3;
     int bandh = cdev->height;
     byte *band = 0;
@@ -5459,7 +5472,7 @@ save_background_no_subsampling(gx_device_djvu *cdev)
         nbands += 1;
     }
     /* Write PPM header */
-    fprintf(f, "P6\n%d %d\n255\n", cdev->width, cdev->height);
+    gp_fprintf(f, "P6\n%d %d\n255\n", cdev->width, cdev->height);
     /* Write data */
     for(bandy=0; bandy < cdev->height; bandy += bandh) {
 #ifdef DEBUG
@@ -5470,7 +5483,7 @@ save_background_no_subsampling(gx_device_djvu *cdev)
         memset(band, 0xff, bandsize);
         drawlist_play(&cdev->head, DLIST_BACKGROUND,
                       band, sraster, 0, bandy, cdev->width, bandh);
-        if (fwrite(band, sraster, bandh, f) < bandh) {
+        if (gp_fwrite(band, sraster, bandh, f) < bandh) {
             p2mem_free(cdev->pmem, band);
             return_error(gs_error_ioerror);
         }
@@ -5541,7 +5554,7 @@ masksub(byte *rgb, int rgbraster, const byte *mask, int maskraster,
 private int
 save_background(gx_device_djvu *cdev, runmap *mask, int subsample)
 {
-    FILE *f = cdev->outputfile;
+    gp_file *f = cdev->outputfile;
     int subw = (cdev->width + subsample - 1) / subsample;
     int subh = (cdev->height + subsample - 1) / subsample;
     int deadh = subh * subsample - cdev->height;
@@ -5574,7 +5587,7 @@ save_background(gx_device_djvu *cdev, runmap *mask, int subsample)
         nbands += 1;
     }
     /* Write PPM header */
-    fprintf(f, "P6\n%d %d\n255\n", subw, subh);
+    gp_fprintf(f, "P6\n%d %d\n255\n", subw, subh);
     /* Iterate on bands */
     for(bandy = -deadh; bandy < cdev->height; bandy += bandh) {
         int ry;
@@ -5616,7 +5629,7 @@ save_background(gx_device_djvu *cdev, runmap *mask, int subsample)
             /* Subsample row */
             masksub(bandrow, bandraster, bmap, bmapraster, subsample, subw);
             /* Save subsampled row */
-            if (fwrite(bandrow, 3, subw, f) < subw) {
+            if (gp_fwrite(bandrow, 3, subw, f) < subw) {
                 p2mem_free(cdev->pmem, band);
                 p2mem_free(cdev->pmem, bmap);
                 return_error(gs_error_ioerror);
@@ -5691,16 +5704,16 @@ djvusep_process(gx_device_djvu *cdev)
             for (mark=cdev->marks; mark; mark=mark->next) {
                 if (mark->type == 'L') {
                     struct pdfmark_l_s *m = &mark->u.l;
-                    fprintf( cdev->outputfile, 
+                    gp_fprintf( cdev->outputfile, 
                              "# L %dx%d%+d%+d %s\n", 
                              m->w, m->h, m->x, m->y, m->uri );
                 } else if (mark->type == 'B') {
                     struct pdfmark_b_s *m = &mark->u.b;
-                    fprintf( cdev->outputfile,
+                    gp_fprintf( cdev->outputfile,
                              "# B %d %s (#%d)\n",
                              m->count, m->title, m->page );
                 } else if (mark->type == 'P') {
-		    fprintf( cdev->outputfile,
+		    gp_fprintf( cdev->outputfile,
                              "# P %s\n", mark->u.p.title);
                 }
             }
@@ -5709,7 +5722,7 @@ djvusep_process(gx_device_djvu *cdev)
 		txtmark *mark = 0;
                 if ((dl->flags & DLIST_TEXT) && 
                     (mask = dl->mask) &&  (mark = dl->text) )
-                    fprintf( cdev->outputfile, 
+                    gp_fprintf( cdev->outputfile, 
                              "# T %d:%d %d:%d %dx%d%+d%+d %s\n", 
                              mark->x, mark->y, mark->w, mark->h,
                              mask->xmax - mask->xmin +1, 
@@ -5718,7 +5731,7 @@ djvusep_process(gx_device_djvu *cdev)
 	    }
         }
         /* Check for errors */
-        if (ferror(cdev->outputfile)) 
+        if (gp_ferror(cdev->outputfile)) 
             code = gs_error_ioerror;
         if (code < 0) 
             return code; 
