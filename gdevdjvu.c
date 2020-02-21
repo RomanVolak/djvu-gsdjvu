@@ -163,12 +163,11 @@ typedef struct gx_device_djvu_s gx_device_djvu;
 /* STDOUT - for regular printout */
 #ifdef gs_stdout
 # define STDOUT gs_stdout
+#elif GS_VERSION >= 927
+/*# define STDOUT IS_LIBCTX_STDOUT(0?NULL:((gx_device*)cdev)->memory,1)*/
+# define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->core->fstdout)
 #else
-# if GS_VERSION >= 927
-#  define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->core->fstdout)
-# else
-#  define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->fstdout)
-# endif
+# define STDOUT (((gx_device*)cdev)->memory->gs_lib_ctx->fstdout)
 #endif
 
 /* Called by macro ASSERT defined in the H file */
